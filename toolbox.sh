@@ -18,17 +18,12 @@ SHORTCUT_PATH="${DECK_DESKTOP}/周克儿工具箱.desktop"
 ICON_DIR="/home/deck/.jokertoolbox"
 ICON_PATH="${ICON_DIR}/icon.jpg"
 
-# 检测如果是标准的 Steam Deck 桌面环境
 if [ -d "$DECK_DESKTOP" ]; then
-    # 1. 创建隐藏资产文件夹
     mkdir -p "$ICON_DIR"
-    
-    # 2. 自动从你的 GitHub 仓库下载专属高清图标
     if [ ! -f "$ICON_PATH" ]; then
         curl -sL "https://raw.githubusercontent.com/zliu9732-hub/JokerToolbox/main/icon.jpg" -o "$ICON_PATH"
     fi
 
-    # 3. 自动生成本地桌面快捷方式
     if [ ! -f "$SHORTCUT_PATH" ]; then
         cat << TEXT > "$SHORTCUT_PATH"
 [Desktop Entry]
@@ -40,7 +35,6 @@ Terminal=true
 Type=Application
 Categories=Utility;
 TEXT
-        # 赋予快捷方式可执行权限，确保双击能直接跑
         chmod +x "$SHORTCUT_PATH"
     fi
 fi
@@ -58,8 +52,8 @@ show_menu() {
     echo -e "${YELLOW}  3.${NC} 🔓 解除系统只读锁定 (开启 Arch Linux 软件安装权限)"
     echo -e "${YELLOW}  4.${NC} 🧹 深度清理着色器缓存 (一键释放十几G固态硬盘空间)"
     echo -e "${BLUE}--------------------------------------------------${NC}"
-    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】(123云盘国内不限速绿色版)"
-    echo -e "${YELLOW}  6.${NC} 🖥️  高速下载【RustDesk】(远程协助免安装版，方便连线)"
+    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】(123云盘官方DEB绿色轻量版)"
+    echo -e "${YELLOW}  6.${NC} 🖥️  高速下载【RustDesk】(自动配置周克儿不卡顿自建服务器)"
     echo -e "${YELLOW}  Q.${NC} 🚪 退出工具箱"
     echo -e "${BLUE}==================================================${NC}"
     echo -n "请输入选项 [1-6 或 Q]: "
@@ -132,7 +126,7 @@ while true; do
                     rm -rf "$SHADER_DIR"/*
                     echo -e "${GREEN}✓ 清理完毕！成功为你腾出 $CACHE_SIZE 的宝贵空间！${NC}"
                 else
-                    echo -e "${YELLOW}已取消清理。${NC}"
+                    echo -e "${YELLOW}开取消清理。${NC}"
                 fi
             else
                 echo -e "${RED}❌ 未找到着色器缓存目录，可能你已经清理过，或者使用的是不产生缓存的系统版本。${NC}"
@@ -143,16 +137,39 @@ while true; do
 
         5)
             echo -e "\n${GREEN}[开始执行] 正在通过国内高速通道下载百度网盘...${NC}"
-            echo -e "${YELLOW}提示: 正在从123云盘抽取数据(不限速通道)，请稍候...${NC}"
+            echo -e "${YELLOW}提示: 正在从123云盘极速抽取官方数据，请稍候...${NC}"
             
-            BAIDU_LINK="这里换成你的123云盘百度网盘直链"
-            curl -L -o /home/deck/Desktop/百度网盘.AppImage "$BAIDU_LINK"
+            BAIDU_LINK="https://1846467258.cdn.123clouddisk.com/1846467258/%E8%A7%86%E9%A2%91/baidunetdisk_8.5.2_amd64.deb"
             
-            if [ $? -eq 0 ] && [ -f "/home/deck/Desktop/百度网盘.AppImage" ]; then
-                chmod +x /home/deck/Desktop/百度网盘.AppImage
-                echo -e "${GREEN}✓ 下载完成！软件已直接存放在您的【掌机桌面】，双击即可直接打开使用！${NC}"
+            mkdir -p /tmp/joker_baidu
+            curl -L -o /tmp/joker_baidu/baidu.deb "$BAIDU_LINK"
+            
+            if [ $? -eq 0 ] && [ -f "/tmp/joker_baidu/baidu.deb" ]; then
+                echo -e "${YELLOW}正在在买家个人目录部署免安装绿色版环境...${NC}"
+                TARGET_DIR="/home/deck/.local/share/baidunetdisk"
+                mkdir -p "$TARGET_DIR" && cd "$TARGET_DIR"
+                
+                bsdtar -xf /tmp/joker_baidu/baidu.deb
+                if [ -f "data.tar.xz" ]; then
+                    tar -xf data.tar.xz
+                elif [ -f "data.tar.gz" ]; then
+                    tar -xf data.tar.gz
+                fi
+                
+                cat << TEXT > /home/deck/Desktop/百度网盘.desktop
+[Desktop Entry]
+Name=百度网盘
+Exec="${TARGET_DIR}/opt/baidunetdisk/baidunetdisk" --no-sandbox
+Icon=network-workgroup
+Terminal=false
+Type=Application
+Categories=Network;
+TEXT
+                chmod +x /home/deck/Desktop/百度网盘.desktop
+                rm -rf /tmp/joker_baidu
+                echo -e "${GREEN}✓ 百度网盘已完美转换为不伤系统的绿色版，并发送到【掌机桌面】！${NC}"
             else
-                echo -e "${RED}❌ 下载失败，请检查123云盘直链是否有效，或网络是否断开。${NC}"
+                echo -e "${RED}❌ 下载失败，请检查123云盘的 deb 直链是否有效。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
             read -n 1
@@ -162,12 +179,23 @@ while true; do
             echo -e "\n${GREEN}[开始执行] 正在通过国内高速通道下载 RustDesk...${NC}"
             echo -e "${YELLOW}提示: 正在从123云盘抽取数据(不限速通道)，请稍候...${NC}"
             
-            RUSTDESK_LINK="这里换成你的123云盘RustDesk直链"
+            RUSTDESK_LINK="https://1846467258.cdn.123clouddisk.com/1846467258/%E8%A7%86%E9%A2%91/rustdesk-1.4.8-x86_64.AppImage"
             curl -L -o /home/deck/Desktop/远程协助.AppImage "$RUSTDESK_LINK"
             
             if [ $? -eq 0 ] && [ -f "/home/deck/Desktop/远程协助.AppImage" ]; then
                 chmod +x /home/deck/Desktop/远程协助.AppImage
-                echo -e "${GREEN}✓ 下载完成！软件已直接存放在您的【掌机桌面】，打开后请将ID发给客服。${NC}"
+                
+                echo -e "${YELLOW}正在自动配置周克儿专属高清、零延迟自建服务器通道...${NC}"
+                mkdir -p /home/deck/.config/rustdesk
+                cat << CONFIG_EOF > /home/deck/.config/rustdesk/RustDesk.toml
+id-server = '293035.xyz:48845'
+relay-server = '293035.xyz:48846'
+api-server = 'http://293035.xyz:48843'
+key = '2Vx42GidjDLgp0kT5akymxN3BjXSOLH0QQuhe2TAS4g='
+custom-rendezvous-server = '293035.xyz:48845'
+CONFIG_EOF
+                
+                echo -e "${GREEN}✓ 下载完成！软件已放置在【掌机桌面】，且服务器参数已自动注入，直接打开把ID发给客服即可！${NC}"
             else
                 echo -e "${RED}❌ 下载失败，请检查123云盘直链是否有效，或网络是否断开。${NC}"
             fi
