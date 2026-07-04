@@ -47,13 +47,13 @@ show_menu() {
     echo -e "${BLUE}==================================================${NC}"
     echo -e "${GREEN}               欢迎使用 周克儿工具箱 v0.3          ${NC}"
     echo -e "${BLUE}==================================================${NC}"
-    echo -e "${YELLOW}  1.${NC} 🚀 一键网络加速 (优化 GitHub & 脚本下载速度)"
-    echo -e "${YELLOW}  2.${NC} 🛠️  修复双系统引导 (专治 Windows 更新后找不到 SteamOS)"
-    echo -e "${YELLOW}  3.${NC} 🔓 解除系统只读锁定 (开启 Arch Linux 软件安装权限)"
-    echo -e "${YELLOW}  4.${NC} 🧹 深度清理着色器缓存 (一键释放十几G固态硬盘空间)"
+    echo -e "${YELLOW}  1.${NC} 🚀 一键网络加速"
+    echo -e "${YELLOW}  2.${NC} 🛠️  修复双系统引导"
+    echo -e "${YELLOW}  3.${NC} 🔓 解除系统只读锁定"
+    echo -e "${YELLOW}  4.${NC} 🧹 深度清理着色器缓存"
     echo -e "${BLUE}--------------------------------------------------${NC}"
-    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】(123云盘官方DEB绿色轻量版)"
-    echo -e "${YELLOW}  6.${NC} 🖥️  高速下载【RustDesk】(自动配置周克儿不卡顿自建服务器)"
+    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】"
+    echo -e "${YELLOW}  6.${NC} 🖥️  高速下载【RustDesk】"
     echo -e "${YELLOW}  Q.${NC} 🚪 退出工具箱"
     echo -e "${BLUE}==================================================${NC}"
     echo -n "请输入选项 [1-6 或 Q]: "
@@ -64,7 +64,8 @@ show_menu() {
 # ==========================================
 while true; do
     show_menu
-    read choice
+    # 📌 强行绑定物理键盘输入
+    read choice < /dev/tty
     case $choice in
         1)
             echo -e "\n${GREEN}[开始执行] 正在配置网络加速...${NC}"
@@ -75,7 +76,7 @@ while true; do
             sudo steamos-readonly enable
             echo -e "${GREEN}✓ GitHub Hosts 加速节点已注入！后续下载脚本将大幅提速。${NC}"
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
-            read -n 1
+            read -n 1 < /dev/tty
             ;;
             
         2)
@@ -88,15 +89,15 @@ while true; do
                 echo -e "${RED}❌ 错误：未检测到标准的 EFI 分区，请确保在 SteamOS 桌面模式下运行！${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
-            read -n 1
+            read -n 1 < /dev/tty
             ;;
             
         3)
             echo -e "\n${GREEN}[开始执行] 系统只读权限管理...${NC}"
-            echo -e "${PURPLE}1)${NC} 一键【解除锁定】(解锁后可使用 pacman 安装各种 Arch Linux 软件)"
-            echo -e "${PURPLE}2)${NC} 一键【恢复锁定】(让系统回归官方原生安全状态)"
+            echo -e "${PURPLE}1)${NC} 一键【解除锁定】"
+            echo -e "${PURPLE}2)${NC} 一键【恢复锁定】"
             echo -n "请选择操作 [1-2]: "
-            read ro_choice
+            read ro_choice < /dev/tty
             if [ "$ro_choice" = "1" ]; then
                 sudo steamos-readonly disable
                 echo -e "${YELLOW}正在初始化系统的软件包密钥(Pacman Keys)...${NC}"
@@ -110,7 +111,7 @@ while true; do
                 echo -e "${RED}无效输入。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
-            read -n 1
+            read -n 1 < /dev/tty
             ;;
             
         4)
@@ -118,21 +119,21 @@ while true; do
             SHADER_DIR="/home/deck/.local/share/Steam/steamapps/shadercache"
             if [ -d "$SHADER_DIR" ]; then
                 CACHE_SIZE=$(du -sh "$SHADER_DIR" | awk '{print $1}')
-                echo -e "${YELLOW}检测到当前着色器缓存（Shader Cache）共占用：${NC}${RED}$CACHE_SIZE${NC}"
-                echo -n "确定要彻底清空它们来释放固态硬盘空间吗？(y/n): "
-                read confirm
+                echo -e "${YELLOW}检测到当前着色器缓存共占用：${NC}${RED}$CACHE_SIZE${NC}"
+                echo -n "确定要彻底清空它们来释放空间吗？(y/n): "
+                read confirm < /dev/tty
                 if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                     echo -e "${YELLOW}正在强力粉碎缓存垃圾...${NC}"
                     rm -rf "$SHADER_DIR"/*
                     echo -e "${GREEN}✓ 清理完毕！成功为你腾出 $CACHE_SIZE 的宝贵空间！${NC}"
                 else
-                    echo -e "${YELLOW}开取消清理。${NC}"
+                    echo -e "${YELLOW}已取消清理。${NC}"
                 fi
             else
-                echo -e "${RED}❌ 未找到着色器缓存目录，可能你已经清理过，或者使用的是不产生缓存的系统版本。${NC}"
+                echo -e "${RED}❌ 未找到着色器缓存目录。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
-            read -n 1
+            read -n 1 < /dev/tty
             ;;
 
         5)
@@ -167,17 +168,17 @@ Categories=Network;
 TEXT
                 chmod +x /home/deck/Desktop/百度网盘.desktop
                 rm -rf /tmp/joker_baidu
-                echo -e "${GREEN}✓ 百度网盘已完美转换为不伤系统的绿色版，并发送到【掌机桌面】！${NC}"
+                echo -e "${GREEN}✓ 百度网盘已完美转换为绿色版，并发送到【掌机桌面】！${NC}"
             else
                 echo -e "${RED}❌ 下载失败，请检查123云盘的 deb 直链是否有效。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
-            read -n 1
+            read -n 1 < /dev/tty
             ;;
 
         6)
             echo -e "\n${GREEN}[开始执行] 正在通过国内高速通道下载 RustDesk...${NC}"
-            echo -e "${YELLOW}提示: 正在从123云盘抽取数据(不限速通道)，请稍候...${NC}"
+            echo -e "${YELLOW}提示: 正在从123云盘抽取数据，请稍候...${NC}"
             
             RUSTDESK_LINK="https://1846467258.cdn.123clouddisk.com/1846467258/%E8%A7%86%E9%A2%91/rustdesk-1.4.8-x86_64.AppImage"
             curl -L -o /home/deck/Desktop/远程协助.AppImage "$RUSTDESK_LINK"
@@ -195,12 +196,12 @@ key = '2Vx42GidjDLgp0kT5akymxN3BjXSOLH0QQuhe2TAS4g='
 custom-rendezvous-server = '293035.xyz:48845'
 CONFIG_EOF
                 
-                echo -e "${GREEN}✓ 下载完成！软件已放置在【掌机桌面】，且服务器参数已自动注入，直接打开把ID发给客服即可！${NC}"
+                echo -e "${GREEN}✓ 下载完成！服务器参数已自动注入，直接打开把ID发给客服即可！${NC}"
             else
-                echo -e "${RED}❌ 下载失败，请检查123云盘直链是否有效，或网络是否断开。${NC}"
+                echo -e "${RED}❌ 下载失败，请检查123云盘直链是否有效。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
-            read -n 1
+            read -n 1 < /dev/tty
             ;;
             
         q|Q)
