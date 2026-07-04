@@ -40,7 +40,7 @@ TEXT
 fi
 
 # ==========================================
-# 独家专属：免责声明弹窗（严密防赖皮逻辑）
+# 免责声明弹窗
 # ==========================================
 show_disclaimer() {
     clear
@@ -85,7 +85,6 @@ show_menu() {
 # ==========================================
 # 执行流程控制
 # ==========================================
-# 🚀 启动时先强制展示免责声明（仅执行一次）
 show_disclaimer
 
 while true; do
@@ -178,12 +177,20 @@ while true; do
                 cd "$TARGET_DIR"
                 
                 bsdtar -xf /tmp/joker_baidu/baidu.deb
-                if [ -f "data.tar.zst" ]; then
-                    tar -xf data.tar.zst
+                
+                # 📌 终极绝杀：强力补齐对 image_7.png 里看到的 data.tar.bz2 格式的完美支持！
+                if [ -f "data.tar.bz2" ]; then
+                    bsdtar -xf data.tar.bz2
+                elif [ -f "data.tar.zst" ]; then
+                    bsdtar -xf data.tar.zst
                 elif [ -f "data.tar.xz" ]; then
-                    tar -xf data.tar.xz
+                    bsdtar -xf data.tar.xz
                 elif [ -f "data.tar.gz" ]; then
-                    tar -xf data.tar.gz
+                    bsdtar -xf data.tar.gz
+                fi
+                
+                if [ -f "${TARGET_DIR}/opt/baidunetdisk/baidunetdisk" ]; then
+                    chmod +x "${TARGET_DIR}/opt/baidunetdisk/baidunetdisk"
                 fi
                 
                 cat << TEXT > /home/deck/Desktop/百度网盘.desktop
