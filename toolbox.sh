@@ -40,6 +40,29 @@ TEXT
 fi
 
 # ==========================================
+# 独家专属：免责声明弹窗（严密防赖皮逻辑）
+# ==========================================
+show_disclaimer() {
+    clear
+    echo -e "${RED}==================================================${NC}"
+    echo -e "${RED}                ⚠️ 免 责 声 明 ⚠️                ${NC}"
+    echo -e "${RED}==================================================${NC}"
+    echo -e "${YELLOW}1. 本工具箱由【周克儿】制作，仅供技术交流与便利使用。${NC}"
+    echo -e "${YELLOW}2. 本工具涉及系统底层修改（如解锁只读、双系统引导修复等），${NC}"
+    echo -e "${YELLOW}   操作均具有潜在风险，请在执行前自行备份重要数据。${NC}"
+    echo -e "${YELLOW}3. 凡因用户自身误操作、掌机硬件老化故障、官方系统更新${NC}"
+    echo -e "${YELLOW}   不兼容等任何第三方原因导致的设备损坏、数据丢失、${NC}"
+    echo -e "${YELLOW}   系统崩溃或经济损失，本工具及作者不承担任何法律${NC}"
+    echo -e "${YELLOW}   及经济赔偿责任。${NC}"
+    echo -e "${BLUE}--------------------------------------------------${NC}"
+    echo -e "${GREEN}👉 凡运行、使用本工具箱者，即视为您已完全知晓并自愿${NC}"
+    echo -e "${GREEN}   接受本声明的所有条款。如有异议，请立即关闭本窗口。${NC}"
+    echo -e "${RED}==================================================${NC}"
+    echo -n "如果您已阅读并同意上述声明，请按任意键进入工具箱..."
+    read -n 1 < /dev/tty
+}
+
+# ==========================================
 # 主菜单界面
 # ==========================================
 show_menu() {
@@ -60,11 +83,13 @@ show_menu() {
 }
 
 # ==========================================
-# 核心功能实现
+# 执行流程控制
 # ==========================================
+# 🚀 启动时先强制展示免责声明（仅执行一次）
+show_disclaimer
+
 while true; do
     show_menu
-    # 📌 强行绑定物理键盘输入
     read choice < /dev/tty
     case $choice in
         1)
@@ -148,10 +173,14 @@ while true; do
             if [ $? -eq 0 ] && [ -f "/tmp/joker_baidu/baidu.deb" ]; then
                 echo -e "${YELLOW}正在在买家个人目录部署免安装绿色版环境...${NC}"
                 TARGET_DIR="/home/deck/.local/share/baidunetdisk"
-                mkdir -p "$TARGET_DIR" && cd "$TARGET_DIR"
+                mkdir -p "$TARGET_DIR"
+                rm -rf "$TARGET_DIR"/*
+                cd "$TARGET_DIR"
                 
                 bsdtar -xf /tmp/joker_baidu/baidu.deb
-                if [ -f "data.tar.xz" ]; then
+                if [ -f "data.tar.zst" ]; then
+                    tar -xf data.tar.zst
+                elif [ -f "data.tar.xz" ]; then
                     tar -xf data.tar.xz
                 elif [ -f "data.tar.gz" ]; then
                     tar -xf data.tar.gz
