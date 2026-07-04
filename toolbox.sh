@@ -70,12 +70,12 @@ show_menu() {
     echo -e "${BLUE}==================================================${NC}"
     echo -e "${GREEN}               欢迎使用 周克儿工具箱 v0.3          ${NC}"
     echo -e "${BLUE}==================================================${NC}"
-    echo -e "${YELLOW}  1.${NC} 🚀 一键网络加速"
+    echo -e "${YELLOW}  1.${NC} 🚀 一键网络加速 (含 Flatpak 国内源优化)"
     echo -e "${YELLOW}  2.${NC} 🛠️  修复双系统引导"
     echo -e "${YELLOW}  3.${NC} 🔓 解除系统只读锁定"
     echo -e "${YELLOW}  4.${NC} 🧹 深度清理着色器缓存"
     echo -e "${BLUE}--------------------------------------------------${NC}"
-    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】"
+    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】 (Flatpak高速版)"
     echo -e "${YELLOW}  6.${NC} 🖥️  高速下载【RustDesk】"
     echo -e "${YELLOW}  Q.${NC} 🚪 退出工具箱"
     echo -e "${BLUE}==================================================${NC}"
@@ -92,13 +92,22 @@ while true; do
     read choice < /dev/tty
     case $choice in
         1)
-            echo -e "\n${GREEN}[开始执行] 正在配置网络加速...${NC}"
+            echo -e "\n${GREEN}[开始执行] 正在配置系统网络双重加速...${NC}"
+            
+            # 1. GitHub Hosts 加速
+            echo -e "${YELLOW}正在注入 GitHub 高速 Hosts 节点...${NC}"
             sudo steamos-readonly disable
             sudo sed -i '/githubusercontent/d' /etc/hosts
             echo "185.199.108.133 raw.githubusercontent.com" | sudo tee -a /etc/hosts > /dev/null
             echo "185.199.109.133 raw.githubusercontent.com" | sudo tee -a /etc/hosts > /dev/null
             sudo steamos-readonly enable
-            echo -e "${GREEN}✓ GitHub Hosts 加速节点已注入！后续下载脚本将大幅提速。${NC}"
+            
+            # 2. Flatpak 镜像源加速 (切换至上海交通大学高速源)
+            echo -e "${YELLOW}正在配置 Flatpak 上海交通大学高速镜像源...${NC}"
+            flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+            flatpak remote-modify flathub --url=https://mirror.sjtu.edu.cn/flathub
+            
+            echo -e "${GREEN}✓ 双重加速配置完成！GitHub 与 Flatpak 商店下载已全面提速。${NC}"
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
             read -n 1 < /dev/tty
             ;;
@@ -161,52 +170,42 @@ while true; do
             ;;
 
         5)
-            echo -e "\n${GREEN}[开始执行] 正在通过国内高速通道下载百度网盘...${NC}"
-            echo -e "${YELLOW}提示: 正在从123云盘极速抽取官方数据，请稍候...${NC}"
+            echo -e "\n${GREEN}[开始执行] 正在通过 Flatpak 官方通道部署百度网盘...${NC}"
             
-            BAIDU_LINK="https://1846467258.cdn.123clouddisk.com/1846467258/%E8%A7%86%E9%A2%91/baidunetdisk_8.5.2_amd64.deb"
+            # 📌 核心升级：强行注入国内镜像源双重保险，无脑拉满下载速度
+            echo -e "${YELLOW}正在初始化配置上海交通大学 Flatpak 国内高速镜像源...${NC}"
+            flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+            flatpak remote-modify flathub --url=https://mirror.sjtu.edu.cn/flathub
             
-            mkdir -p /tmp/joker_baidu
-            curl -L -o /tmp/joker_baidu/baidu.deb "$BAIDU_LINK"
+            echo -e "${YELLOW}正在从国内高速仓安全拉取最新的百度网盘，请稍候...${NC}"
+            flatpak install flathub com.baidu.BaiduNetdisk -y
             
-            if [ $? -eq 0 ] && [ -f "/tmp/joker_baidu/baidu.deb" ]; then
-                echo -e "${YELLOW}正在在买家个人目录部署免安装绿色版环境...${NC}"
-                TARGET_DIR="/home/deck/.local/share/baidunetdisk"
-                mkdir -p "$TARGET_DIR"
-                rm -rf "$TARGET_DIR"/*
-                cd "$TARGET_DIR"
+            if [ $? -eq 0 ]; then
+                echo -e "${YELLOW}安装成功！正在为您自动提取并创建桌面快捷方式...${NC}"
                 
-                bsdtar -xf /tmp/joker_baidu/baidu.deb
+                SYS_DESKTOP="/var/lib/flatpak/exports/share/applications/com.baidu.BaiduNetdisk.desktop"
+                USER_DESKTOP="/home/deck/.local/share/flatpak/exports/share/applications/com.baidu.BaiduNetdisk.desktop"
                 
-                # 📌 终极绝杀：强力补齐对 image_7.png 里看到的 data.tar.bz2 格式的完美支持！
-                if [ -f "data.tar.bz2" ]; then
-                    bsdtar -xf data.tar.bz2
-                elif [ -f "data.tar.zst" ]; then
-                    bsdtar -xf data.tar.zst
-                elif [ -f "data.tar.xz" ]; then
-                    bsdtar -xf data.tar.xz
-                elif [ -f "data.tar.gz" ]; then
-                    bsdtar -xf data.tar.gz
-                fi
-                
-                if [ -f "${TARGET_DIR}/opt/baidunetdisk/baidunetdisk" ]; then
-                    chmod +x "${TARGET_DIR}/opt/baidunetdisk/baidunetdisk"
-                fi
-                
-                cat << TEXT > /home/deck/Desktop/百度网盘.desktop
+                if [ -f "$SYS_DESKTOP" ]; then
+                    cp "$SYS_DESKTOP" /home/deck/Desktop/百度网盘.desktop
+                elif [ -f "$USER_DESKTOP" ]; then
+                    cp "$USER_DESKTOP" /home/deck/Desktop/百度网盘.desktop
+                else
+                    cat << TEXT > /home/deck/Desktop/百度网盘.desktop
 [Desktop Entry]
 Name=百度网盘
-Exec="${TARGET_DIR}/opt/baidunetdisk/baidunetdisk" --no-sandbox
+Comment=Baidu Netdisk Flatpak
+Exec=flatpak run com.baidu.BaiduNetdisk
 Icon=network-workgroup
 Terminal=false
 Type=Application
 Categories=Network;
 TEXT
+                fi
                 chmod +x /home/deck/Desktop/百度网盘.desktop
-                rm -rf /tmp/joker_baidu
-                echo -e "${GREEN}✓ 百度网盘已完美转换为绿色版，并发送到【掌机桌面】！${NC}"
+                echo -e "${GREEN}✓ 百度网盘（原生沙盒版）已完美落地！已发送到【掌机桌面】！${NC}"
             else
-                echo -e "${RED}❌ 下载失败，请检查123云盘的 deb 直链是否有效。${NC}"
+                echo -e "${RED}❌ 安装失败，请检查掌机网络是否可以正常上网。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
             read -n 1 < /dev/tty
