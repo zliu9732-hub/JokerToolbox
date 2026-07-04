@@ -75,11 +75,12 @@ show_menu() {
     echo -e "${YELLOW}  3.${NC} 🔓 解除系统只读锁定"
     echo -e "${YELLOW}  4.${NC} 🧹 深度清理着色器缓存"
     echo -e "${BLUE}--------------------------------------------------${NC}"
-    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】 (Flatpak高速版)"
+    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】 (Flatpak完全体)"
     echo -e "${YELLOW}  6.${NC} 🖥️  高速下载【RustDesk】"
+    echo -e "${YELLOW}  7.${NC} 🔑 一键修改系统密码 (自动备份到桌面)"
     echo -e "${YELLOW}  Q.${NC} 🚪 退出工具箱"
     echo -e "${BLUE}==================================================${NC}"
-    echo -n "请输入选项 [1-6 或 Q]: "
+    echo -n "请输入选项 [1-7 或 Q]: "
 }
 
 # ==========================================
@@ -93,19 +94,15 @@ while true; do
     case $choice in
         1)
             echo -e "\n${GREEN}[开始执行] 正在配置系统网络双重加速...${NC}"
-            
-            # 1. GitHub Hosts 加速
-            echo -e "${YELLOW}正在注入 GitHub 高速 Hosts 节点...${NC}"
             sudo steamos-readonly disable
             sudo sed -i '/githubusercontent/d' /etc/hosts
             echo "185.199.108.133 raw.githubusercontent.com" | sudo tee -a /etc/hosts > /dev/null
             echo "185.199.109.133 raw.githubusercontent.com" | sudo tee -a /etc/hosts > /dev/null
             sudo steamos-readonly enable
             
-            # 2. Flatpak 镜像源加速 (切换至上海交通大学高速源)
-            echo -e "${YELLOW}正在配置 Flatpak 上海交通大学高速镜像源...${NC}"
             flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
             flatpak remote-modify flathub --url=https://mirror.sjtu.edu.cn/flathub
+            flatpak update --appstream -y > /dev/null 2>&1
             
             echo -e "${GREEN}✓ 双重加速配置完成！GitHub 与 Flatpak 商店下载已全面提速。${NC}"
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
@@ -133,7 +130,6 @@ while true; do
             read ro_choice < /dev/tty
             if [ "$ro_choice" = "1" ]; then
                 sudo steamos-readonly disable
-                echo -e "${YELLOW}正在初始化系统的软件包密钥(Pacman Keys)...${NC}"
                 sudo pacman-key --init > /dev/null 2>&1
                 sudo pacman-key --populate archlinux > /dev/null 2>&1
                 echo -e "${GREEN}✓ 系统已完美解锁！现在你可以自由折腾底层软件了。${NC}"
@@ -171,25 +167,25 @@ while true; do
 
         5)
             echo -e "\n${GREEN}[开始执行] 正在通过 Flatpak 官方通道部署百度网盘...${NC}"
-            
-            # 📌 核心升级：强行注入国内镜像源双重保险，无脑拉满下载速度
-            echo -e "${YELLOW}正在初始化配置上海交通大学 Flatpak 国内高速镜像源...${NC}"
+            echo -e "${YELLOW}正在配置上海交通大学 Flatpak 国内高速镜像源...${NC}"
             flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
             flatpak remote-modify flathub --url=https://mirror.sjtu.edu.cn/flathub
             
+            echo -e "${YELLOW}正在强行拉取并同步最新的国内仓软件商品清单...${NC}"
+            flatpak update --appstream -y
+            
             echo -e "${YELLOW}正在从国内高速仓安全拉取最新的百度网盘，请稍候...${NC}"
-            flatpak install flathub com.baidu.BaiduNetdisk -y
+            flatpak install flathub com.baidu.BaiduNetdisk --user --noninteractive -y
             
             if [ $? -eq 0 ]; then
                 echo -e "${YELLOW}安装成功！正在为您自动提取并创建桌面快捷方式...${NC}"
-                
                 SYS_DESKTOP="/var/lib/flatpak/exports/share/applications/com.baidu.BaiduNetdisk.desktop"
                 USER_DESKTOP="/home/deck/.local/share/flatpak/exports/share/applications/com.baidu.BaiduNetdisk.desktop"
                 
-                if [ -f "$SYS_DESKTOP" ]; then
-                    cp "$SYS_DESKTOP" /home/deck/Desktop/百度网盘.desktop
-                elif [ -f "$USER_DESKTOP" ]; then
+                if [ -f "$USER_DESKTOP" ]; then
                     cp "$USER_DESKTOP" /home/deck/Desktop/百度网盘.desktop
+                elif [ -f "$SYS_DESKTOP" ]; then
+                    cp "$SYS_DESKTOP" /home/deck/Desktop/百度网盘.desktop
                 else
                     cat << TEXT > /home/deck/Desktop/百度网盘.desktop
 [Desktop Entry]
@@ -238,6 +234,48 @@ CONFIG_EOF
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
             read -n 1 < /dev/tty
             ;;
+
+        7)
+            echo -e "\n${GREEN}[开始执行] 正在准备修改系统密码...${NC}"
+            echo -e "${YELLOW}提示: 建议设置简单的纯数字或英文（例如：123456），方便以后输入。${NC}"
+            echo -n "请输入您想设置的新密码: "
+            
+            # 使用标准的 read 接收买家输入的自定义密码
+            read new_pwd < /dev/tty
+            
+            if [ -z "$new_pwd" ]; then
+                echo -e "${RED}❌ 密码不能为空，已取消修改。${NC}"
+            else
+                echo -e "${YELLOW}正在通过系统底层强行重置并注入新密码...${NC}"
+                # 📌 核心底层逻辑：使用 chpasswd 强行暴力重写 deck 用户的系统密码
+                echo "deck:$new_pwd" | sudo chpasswd
+                
+                if [ $? -eq 0 ]; then
+                    # 📌 核心联动需求：自动在桌面创建或覆盖密码备份文本
+                    PWD_FILE="/home/deck/Desktop/密码.txt"
+                    cat << PWD_EOF > "$PWD_FILE"
+==================================================
+        周克儿工具箱 - 您的系统密码备份
+==================================================
+您的 Steam Deck 系统密码 (sudo 密码) 已成功修改为：
+
+👉  $new_pwd
+
+提示：以后在工具箱运行需要最高权限的功能（如解锁只读），
+或者在 Linux 终端使用 sudo 命令时，请输入上面这个密码。
+（注：在 Linux 终端里输入密码时，屏幕上不会显示任何东西，
+这是正常保护机制，输完直接按回车即可！）
+==================================================
+PWD_EOF
+                    echo -e "${GREEN}✓ 系统密码已成功修改为：$new_pwd ${NC}"
+                    echo -e "${GREEN}✓ 贴心防护包已落地：【掌机桌面】->【密码.txt】已同步更新！${NC}"
+                else
+                    echo -e "${RED}❌ 密码修改失败，请确保您在 SteamOS 官方系统环境下运行。${NC}"
+                fi
+            fi
+            echo -e "${YELLOW}按任意键返回主菜单...${NC}"
+            read -n 1 < /dev/tty
+            ;;
             
         q|Q)
             echo -e "\n${YELLOW}感谢使用周克儿工具箱，祝您游戏愉快！再见。${NC}\n"
@@ -245,7 +283,7 @@ CONFIG_EOF
             ;;
             
         *)
-            echo -e "\n${RED}输入错误，请输入 1-6 的数字或 Q！${NC}"
+            echo -e "\n${RED}输入错误，请输入 1-7 的数字或 Q！${NC}"
             sleep 1
             ;;
     esac
