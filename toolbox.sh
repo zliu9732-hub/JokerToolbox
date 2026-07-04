@@ -11,20 +11,55 @@ PURPLE='\033[0;35m'
 NC='\033[0m' 
 
 # ==========================================
+# 自动创建桌面快捷方式 & 下载专属高清图标 (JPG版)
+# ==========================================
+DECK_DESKTOP="/home/deck/Desktop"
+SHORTCUT_PATH="${DECK_DESKTOP}/周克儿工具箱.desktop"
+ICON_DIR="/home/deck/.jokertoolbox"
+ICON_PATH="${ICON_DIR}/icon.jpg"
+
+# 检测如果是标准的 Steam Deck 桌面环境
+if [ -d "$DECK_DESKTOP" ]; then
+    # 1. 创建隐藏资产文件夹
+    mkdir -p "$ICON_DIR"
+    
+    # 2. 自动从你的 GitHub 仓库下载专属高清图标
+    if [ ! -f "$ICON_PATH" ]; then
+        curl -sL "https://raw.githubusercontent.com/zliu9732-hub/JokerToolbox/main/icon.jpg" -o "$ICON_PATH"
+    fi
+
+    # 3. 自动生成本地桌面快捷方式
+    if [ ! -f "$SHORTCUT_PATH" ]; then
+        cat << TEXT > "$SHORTCUT_PATH"
+[Desktop Entry]
+Name=周克儿工具箱
+Comment=周克儿出品 Steam Deck 实用工具箱
+Exec=bash -c "curl -sL https://ourl.cn/CFmKpd | bash"
+Icon=${ICON_PATH}
+Terminal=true
+Type=Application
+Categories=Utility;
+TEXT
+        # 赋予快捷方式可执行权限，确保双击能直接跑
+        chmod +x "$SHORTCUT_PATH"
+    fi
+fi
+
+# ==========================================
 # 主菜单界面
 # ==========================================
 show_menu() {
     clear
     echo -e "${BLUE}==================================================${NC}"
-    echo -e "${GREEN}          欢迎使用 周克儿 终极技术工具箱 v0.2     ${NC}"
+    echo -e "${GREEN}               欢迎使用 周克儿工具箱 v0.3          ${NC}"
     echo -e "${BLUE}==================================================${NC}"
     echo -e "${YELLOW}  1.${NC} 🚀 一键网络加速 (优化 GitHub & 脚本下载速度)"
     echo -e "${YELLOW}  2.${NC} 🛠️  修复双系统引导 (专治 Windows 更新后找不到 SteamOS)"
     echo -e "${YELLOW}  3.${NC} 🔓 解除系统只读锁定 (开启 Arch Linux 软件安装权限)"
     echo -e "${YELLOW}  4.${NC} 🧹 深度清理着色器缓存 (一键释放十几G固态硬盘空间)"
     echo -e "${BLUE}--------------------------------------------------${NC}"
-    echo -e "${YELLOW}  5.${NC} 📂 一键安装【百度网盘】(方便下载游戏网盘资源)"
-    echo -e "${YELLOW}  6.${NC} 🖥️  一键安装【RustDesk】(远程协助神器，方便连线调试)"
+    echo -e "${YELLOW}  5.${NC} 📂 高速下载【百度网盘】(123云盘国内不限速绿色版)"
+    echo -e "${YELLOW}  6.${NC} 🖥️  高速下载【RustDesk】(远程协助免安装版，方便连线)"
     echo -e "${YELLOW}  Q.${NC} 🚪 退出工具箱"
     echo -e "${BLUE}==================================================${NC}"
     echo -n "请输入选项 [1-6 或 Q]: "
@@ -78,7 +113,7 @@ while true; do
                 sudo steamos-readonly enable
                 echo -e "${GREEN}✓ 系统已重新恢复只读锁定。${NC}"
             else
-                echo -e "${RED}无效输入. ${NC}"
+                echo -e "${RED}无效输入。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
             read -n 1
@@ -107,26 +142,34 @@ while true; do
             ;;
 
         5)
-            echo -e "\n${GREEN}[开始执行] 正在安装百度网盘...${NC}"
-            echo -e "${YELLOW}提示: 正在从 Flathub 官方源下载并部署百度网盘，这可能需要一点时间，请保持网络畅通...${NC}"
-            flatpak install -y flathub com.baidu.BaiduNetdisk
-            if [ $? -eq 0 ]; then
-                echo -e "${GREEN}✓ 百度网盘安装成功！你可以在应用菜单的「Internet (互联网)」分类里找到它。${NC}"
+            echo -e "\n${GREEN}[开始执行] 正在通过国内高速通道下载百度网盘...${NC}"
+            echo -e "${YELLOW}提示: 正在从123云盘抽取数据(不限速通道)，请稍候...${NC}"
+            
+            BAIDU_LINK="这里换成你的123云盘百度网盘直链"
+            curl -L -o /home/deck/Desktop/百度网盘.AppImage "$BAIDU_LINK"
+            
+            if [ $? -eq 0 ] && [ -f "/home/deck/Desktop/百度网盘.AppImage" ]; then
+                chmod +x /home/deck/Desktop/百度网盘.AppImage
+                echo -e "${GREEN}✓ 下载完成！软件已直接存放在您的【掌机桌面】，双击即可直接打开使用！${NC}"
             else
-                echo -e "${RED}❌ 安装失败，请检查网络连接是否正常，或重试。${NC}"
+                echo -e "${RED}❌ 下载失败，请检查123云盘直链是否有效，或网络是否断开。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
             read -n 1
             ;;
 
         6)
-            echo -e "\n${GREEN}[开始执行] 正在安装 RustDesk 远程协助工具...${NC}"
-            echo -e "${YELLOW}提示: 正在下载远程协助组件，部署完成后打开即可将 ID 发给技术客服进行远程连线...${NC}"
-            flatpak install -y flathub com.rustdesk.RustDesk
-            if [ $? -eq 0 ]; then
-                echo -e "${GREEN}✓ RustDesk 安装成功！已成功创建桌面快捷方式与应用菜单图标。${NC}"
+            echo -e "\n${GREEN}[开始执行] 正在通过国内高速通道下载 RustDesk...${NC}"
+            echo -e "${YELLOW}提示: 正在从123云盘抽取数据(不限速通道)，请稍候...${NC}"
+            
+            RUSTDESK_LINK="这里换成你的123云盘RustDesk直链"
+            curl -L -o /home/deck/Desktop/远程协助.AppImage "$RUSTDESK_LINK"
+            
+            if [ $? -eq 0 ] && [ -f "/home/deck/Desktop/远程协助.AppImage" ]; then
+                chmod +x /home/deck/Desktop/远程协助.AppImage
+                echo -e "${GREEN}✓ 下载完成！软件已直接存放在您的【掌机桌面】，打开后请将ID发给客服。${NC}"
             else
-                echo -e "${RED}❌ 安装失败，请检查网络连接是否正常，或重试。${NC}"
+                echo -e "${RED}❌ 下载失败，请检查123云盘直链是否有效，或网络是否断开。${NC}"
             fi
             echo -e "${YELLOW}按任意键返回主菜单...${NC}"
             read -n 1
